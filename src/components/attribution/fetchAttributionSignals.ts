@@ -84,6 +84,13 @@ function parseTrustAndRelevance(raw: unknown): AttributionTrustAndRelevance | un
   const contributorCounts = record.contributor_counts
   if (typeof contributorCounts === 'number') {
     result.contributor_counts = contributorCounts
+  } else if (
+    typeof contributorCounts === 'object' &&
+    contributorCounts !== null &&
+    typeof (contributorCounts as Record<string, unknown>).total_unique === 'number'
+  ) {
+    // Newer beta responses: { total_unique, logged_in_users, unregistered_users, known_bots }
+    result.contributor_counts = (contributorCounts as Record<string, number>).total_unique
   } else if (contributorCounts === null) {
     result.contributor_counts = null
   }
