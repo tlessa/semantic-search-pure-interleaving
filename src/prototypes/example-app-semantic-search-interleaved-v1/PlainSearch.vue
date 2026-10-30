@@ -31,10 +31,13 @@ import {
   type SearchLanguageOption,
 } from './searchLanguages'
 import { searchWiki, type WikiSearchResult } from './searchWiki'
+import { useKeyboardInset } from './useKeyboardInset'
 import { useRecentSearches } from './useRecentSearches'
 
 const router = useRouter()
 const isIos = useIsIos()
+/** iOS: keeps the bottom search bar on top of the keyboard. */
+const keyboardInset = useKeyboardInset()
 
 const query = ref('')
 const langTabs = ref<SearchLanguageOption[]>([...DEFAULT_SEARCH_LANGUAGES])
@@ -145,7 +148,7 @@ function selectResult(result: WikiSearchResult): void {
 
 <template>
   <MobileWrapper>
-    <div class="template-app-search-shell">
+    <div class="template-app-search-shell" :class="{ 'template-app-search-shell--ios': isIos }">
       <AppChromeHeader v-if="!isIos" :left="searchHeaderLeft" :right="[]" />
 
       <div class="template-app-search">
@@ -229,7 +232,12 @@ function selectResult(result: WikiSearchResult): void {
         </template>
       </div>
 
-      <div v-if="isIos" class="template-app-search__bottom-bar">
+      <div
+        v-if="isIos"
+        class="template-app-search__bottom-bar"
+        :class="{ 'template-app-search__bottom-bar--keyboard': keyboardInset > 0 }"
+        :style="{ '--keyboard-inset': `${keyboardInset}px` }"
+      >
         <SearchInputField />
         <CdxButton weight="quiet" aria-label="Close" @click="goBack">
           <CdxIcon :icon="cdxIconClose" />
@@ -260,12 +268,34 @@ function selectResult(result: WikiSearchResult): void {
   padding: var(--spacing-100, 16px) var(--spacing-150, 24px);
 }
 
+/*
+ * iOS: the search field lives in a bar pinned to the bottom of the screen, lifted by
+ * the keyboard's height (--keyboard-inset, from useKeyboardInset) so it sits right on
+ * top of the keyboard. Below it, room for the home indicator while the keyboard is shut.
+ */
 .template-app-search__bottom-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  z-index: 10;
+  box-sizing: border-box;
   display: flex;
-  flex-shrink: 0;
   align-items: center;
   gap: var(--spacing-50, 8px);
-  padding: var(--spacing-50, 8px) var(--spacing-150, 24px);
+  width: min(100vw, 412px);
+  padding: var(--spacing-50, 8px) var(--spacing-150, 24px)
+    calc(var(--spacing-50, 8px) + env(safe-area-inset-bottom, 0px));
+  background-color: var(--background-color-base, #fff);
+  transform: translate(-50%, calc(-1 * var(--keyboard-inset, 0px)));
+}
+
+.template-app-search__bottom-bar--keyboard {
+  padding-bottom: var(--spacing-50, 8px);
+}
+
+/* Keep the last result clear of the 48px bar. */
+.template-app-search-shell--ios .template-app-search {
+  padding-bottom: calc(var(--spacing-100, 16px) + 48px + env(safe-area-inset-bottom, 0px));
 }
 
 .template-app-search__bottom-bar .template-app-search__input {
