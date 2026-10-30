@@ -180,6 +180,7 @@ async function runSearch(): Promise<void> {
       const lexical = await searchWiki(trimmed, options)
       if (signal.aborted) return
       results.value = lexical
+      scrollResultsToTop()
       return
     }
 
@@ -190,6 +191,7 @@ async function runSearch(): Promise<void> {
     ])
     if (signal.aborted) return
     results.value = interleaveResults(lexical, semantic)
+    scrollResultsToTop()
   } catch (err) {
     if (signal.aborted) return
     searchError.value = err instanceof Error ? err.message : 'Search failed.'
@@ -199,8 +201,17 @@ async function runSearch(): Promise<void> {
   }
 }
 
+/**
+ * New results always start at the top. Mobile Safari scrolls the page when the bottom
+ * search field (iOS) is focused, which left the list showing from the middle.
+ */
+function scrollResultsToTop(): void {
+  window.scrollTo({ top: 0 })
+}
+
 watch([query, activeLang], ([, lang], [, prevLang]) => {
   if (debounceHandle) clearTimeout(debounceHandle)
+  scrollResultsToTop()
 
   // Results from another wiki, or for a too-short query, are never shown.
   if (lang !== prevLang || belowMinimum.value) {
@@ -650,9 +661,9 @@ function onResultMenuSelect(action: ResultMenuAction): void {
   min-width: 0;
 }
 
+/* The page scrolls, not this box: no overflow here, or the sticky tabs can't stick. */
 .template-app-search {
   flex: 1 1 auto;
-  overflow-y: auto;
   padding: var(--spacing-100, 16px) var(--spacing-150, 24px);
 }
 
@@ -691,11 +702,18 @@ function onResultMenuSelect(action: ResultMenuAction): void {
   min-width: 0;
 }
 
+/* Stays on top while the results scroll under it (full width, with the 16px above). */
 .template-app-search__lang-row {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-100, 16px);
+  margin: calc(-1 * var(--spacing-100, 16px)) calc(-1 * var(--spacing-150, 24px)) 0;
+  padding: var(--spacing-100, 16px) var(--spacing-150, 24px) 0;
+  background-color: var(--background-color-base, #fff);
 }
 
 .template-app-search__tabs {
