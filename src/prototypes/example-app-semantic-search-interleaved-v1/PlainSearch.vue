@@ -31,13 +31,15 @@ import {
   type SearchLanguageOption,
 } from './searchLanguages'
 import { searchWiki, type WikiSearchResult } from './searchWiki'
-import { useKeyboardInset } from './useKeyboardInset'
+import { useVisualViewport } from './useVisualViewport'
 import { useRecentSearches } from './useRecentSearches'
 
 const router = useRouter()
 const isIos = useIsIos()
-/** iOS: keeps the bottom search bar on top of the keyboard. */
-const keyboardInset = useKeyboardInset()
+/** The visible area: the screen pins itself to it (iOS search bar on top of the keyboard). */
+const viewport = useVisualViewport()
+/** The results area: the only part of the screen that scrolls. */
+const resultsScroller = ref<HTMLElement | null>(null)
 
 const query = ref('')
 const langTabs = ref<SearchLanguageOption[]>([...DEFAULT_SEARCH_LANGUAGES])
@@ -122,11 +124,11 @@ async function runSearch(): Promise<void> {
 }
 
 /**
- * New results always start at the top. Mobile Safari scrolls the page when the bottom
- * search field (iOS) is focused, which left the list showing from the middle.
+ * New results always start at the top. Only the results area scrolls (the page is
+ * pinned to the visible area), so this never fights mobile Safari's own scrolling.
  */
 function scrollResultsToTop(): void {
-  window.scrollTo({ top: 0 })
+  resultsScroller.value?.scrollTo({ top: 0 })
 }
 
 watch([query, activeLang], () => {
@@ -158,10 +160,13 @@ function selectResult(result: WikiSearchResult): void {
 
 <template>
   <MobileWrapper>
-    <div class="template-app-search-shell" :class="{ 'template-app-search-shell--ios': isIos }">
+    <div
+      class="template-app-search-shell"
+      :style="{ '--viewport-top': `${viewport.top}px`, '--viewport-height': `${viewport.height}px` }"
+    >
       <AppChromeHeader v-if="!isIos" :left="searchHeaderLeft" :right="[]" />
 
-      <div class="template-app-search">
+      <div ref="resultsScroller" class="template-app-search">
         <div class="template-app-search__lang-row">
           <CdxTabs v-model:active="activeLang" class="template-app-search__tabs">
             <CdxTab
@@ -245,8 +250,7 @@ function selectResult(result: WikiSearchResult): void {
       <div
         v-if="isIos"
         class="template-app-search__bottom-bar"
-        :class="{ 'template-app-search__bottom-bar--keyboard': keyboardInset > 0 }"
-        :style="{ '--keyboard-inset': `${keyboardInset}px` }"
+        :class="{ 'template-app-search__bottom-bar--keyboard': viewport.keyboardInset > 0 }"
       >
         <SearchInputField />
         <CdxButton weight="quiet" aria-label="Close" @click="goBack">
@@ -258,12 +262,24 @@ function selectResult(result: WikiSearchResult): void {
 </template>
 
 <style scoped>
+/*
+ * The screen is pinned to the visible area (useVisualViewport): below the browser
+ * bars, above the keyboard. Mobile Safari overlays the keyboard instead of resizing
+ * the page, so this is what keeps the iOS search bar (the last row) on top of it.
+ * Only the results area scrolls; the page itself never does.
+ */
 .template-app-search-shell {
+  position: fixed;
+  top: var(--viewport-top, 0px);
+  left: 50%;
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  box-sizing: border-box;
+  width: min(100vw, 412px);
+  height: var(--viewport-height, 100dvh);
   background-color: var(--background-color-base, #fff);
   color: var(--color-base, #202122);
+  transform: translateX(-50%);
 }
 
 .template-app-search__input {
@@ -272,40 +288,31 @@ function selectResult(result: WikiSearchResult): void {
   min-width: 0;
 }
 
-/* The page scrolls, not this box: no overflow here, or the sticky tabs can't stick. */
+/* The results area: the only part of the screen that scrolls (tabs stick inside it). */
 .template-app-search {
   flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--spacing-100, 16px) var(--spacing-150, 24px);
 }
 
 /*
- * iOS: the search field lives in a bar pinned to the bottom of the screen, lifted by
- * the keyboard's height (--keyboard-inset, from useKeyboardInset) so it sits right on
- * top of the keyboard. Below it, room for the home indicator while the keyboard is shut.
+ * iOS: the search field is the screen's last row, so it sits on top of the keyboard.
+ * While the keyboard is shut, room below it for the home indicator.
  */
 .template-app-search__bottom-bar {
-  position: fixed;
-  left: 50%;
-  bottom: 0;
-  z-index: 10;
-  box-sizing: border-box;
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: var(--spacing-50, 8px);
-  width: min(100vw, 412px);
   padding: var(--spacing-50, 8px) var(--spacing-150, 24px)
     calc(var(--spacing-50, 8px) + env(safe-area-inset-bottom, 0px));
   background-color: var(--background-color-base, #fff);
-  transform: translate(-50%, calc(-1 * var(--keyboard-inset, 0px)));
 }
 
 .template-app-search__bottom-bar--keyboard {
   padding-bottom: var(--spacing-50, 8px);
-}
-
-/* Keep the last result clear of the 48px bar. */
-.template-app-search-shell--ios .template-app-search {
-  padding-bottom: calc(var(--spacing-100, 16px) + 48px + env(safe-area-inset-bottom, 0px));
 }
 
 .template-app-search__bottom-bar .template-app-search__input {
