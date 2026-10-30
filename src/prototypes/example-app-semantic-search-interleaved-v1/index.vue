@@ -674,13 +674,17 @@ function onResultMenuSelect(action: ResultMenuAction): void {
   min-width: 0;
 }
 
-/* The results area: the only part of the screen that scrolls (tabs stick inside it). */
+/*
+ * The results area: the only part of the screen that scrolls (tabs stick inside it).
+ * No top padding: a sticky child can't cancel it with a negative margin (it gets pushed
+ * back down), so the space above the tabs is the tabs row's own padding.
+ */
 .template-app-search {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: var(--spacing-100, 16px) var(--spacing-150, 24px);
+  padding: 0 var(--spacing-150, 24px) var(--spacing-100, 16px);
 }
 
 /*
@@ -706,7 +710,7 @@ function onResultMenuSelect(action: ResultMenuAction): void {
   min-width: 0;
 }
 
-/* Stays on top while the results scroll under it (full width, with the 16px above). */
+/* Stays on top while the results scroll under it (full width, with 8px above). */
 .template-app-search__lang-row {
   position: sticky;
   top: 0;
@@ -715,8 +719,8 @@ function onResultMenuSelect(action: ResultMenuAction): void {
   align-items: center;
   justify-content: space-between;
   gap: var(--spacing-100, 16px);
-  margin: calc(-1 * var(--spacing-100, 16px)) calc(-1 * var(--spacing-150, 24px)) 0;
-  padding: var(--spacing-100, 16px) var(--spacing-150, 24px) 0;
+  margin-inline: calc(-1 * var(--spacing-150, 24px));
+  padding: var(--spacing-50, 8px) var(--spacing-150, 24px) 0;
   background-color: var(--background-color-base, #fff);
 }
 
@@ -736,7 +740,7 @@ function onResultMenuSelect(action: ResultMenuAction): void {
   align-items: center;
   justify-content: flex-end;
   margin-inline: calc(-1 * var(--spacing-150, 24px));
-  padding-inline: var(--spacing-100, 16px);
+  padding: var(--spacing-25, 4px) var(--spacing-100, 16px) 0;
 }
 
 .template-app-search__beta-badge {
