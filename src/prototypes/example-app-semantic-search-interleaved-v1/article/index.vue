@@ -26,11 +26,14 @@ import ArticleFeedbackSheet from './ArticleFeedbackSheet.vue'
 import { useArticleFeedback, useFeedbackToast } from '../searchFeedback'
 import AppArticleView from './AppArticleView.vue'
 import { landOnPassage } from './landOnPassage'
+import { useVisualViewport } from '../useVisualViewport'
 import '../roboto.css'
 
 const route = useRoute()
 const router = useRouter()
 const isIos = useIsIos()
+/** The visible area: the screen pins itself to it so the "W" header never scrolls away. */
+const viewport = useVisualViewport()
 
 function queryString(key: string): string | undefined {
   const value = route.query[key]
@@ -110,7 +113,8 @@ const bottomNavItems = computed(() =>
 
 <template>
   <AppChromeWrapper
-    class="semantic-search-roboto"
+    class="app-article-screen semantic-search-roboto"
+    :style="{ '--viewport-top': `${viewport.top}px`, '--viewport-height': `${viewport.height}px` }"
     :left="headerLeft"
     :middle="headerMiddle"
     :right="headerRight"
@@ -144,3 +148,21 @@ const bottomNavItems = computed(() =>
     <FeedbackToast :message="feedbackToast" :bottom-offset="84" />
   </AppChromeWrapper>
 </template>
+
+<style scoped>
+/*
+ * Pinned to the visible area (useVisualViewport), so only the article scrolls and the
+ * header ("W") and bottom menu stay put. Mobile Safari's 100vh is taller than what's
+ * visible, which let the page itself scroll — landing on a passage then pushed the
+ * header off the top.
+ */
+.app-article-screen :deep(.app-chrome-wrapper) {
+  position: fixed;
+  top: var(--viewport-top, 0px);
+  left: 50%;
+  width: min(100vw, 412px);
+  height: var(--viewport-height, 100dvh);
+  max-height: none;
+  transform: translateX(-50%);
+}
+</style>
