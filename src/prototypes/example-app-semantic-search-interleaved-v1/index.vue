@@ -949,9 +949,9 @@ button.template-app-search__result {
   display: block;
   overflow: hidden;
   color: var(--color-subtle, #54595d);
-  font-size: 12px;
-  line-height: 16px;
-  letter-spacing: 0.4px;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0.25px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
