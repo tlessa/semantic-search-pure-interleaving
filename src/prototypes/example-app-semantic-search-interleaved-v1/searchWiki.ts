@@ -18,7 +18,22 @@ export interface WikiSearchResult {
    * Lexical: the article's first paragraph.
    */
   passageHtml: string | null
+  /** Semantic only: the article section the passage comes from (plain text). */
+  sectionTitle: string | null
+  /** Semantic only: the phrase in the passage that answers the query (plain text). */
+  answerText: string | null
   thumbnailUrl: string | null
+}
+
+/**
+ * `cirrusSemanticSearch=hl` wraps the answering phrase of the passage in `searchmatch`
+ * spans. Returns the longest one as plain text. DOMParser keeps the snippet inert.
+ */
+function answerFromSnippet(snippetHtml: string): string | null {
+  const doc = new DOMParser().parseFromString(snippetHtml, 'text/html')
+  const spans = [...doc.querySelectorAll('.searchmatch')].map((el) => el.textContent?.trim() ?? '')
+  const longest = spans.reduce((best, text) => (text.length > best.length ? text : best), '')
+  return longest || null
 }
 
 function escapeHtml(value: string): string {
@@ -94,9 +109,18 @@ async function fetchPages(
   if (!response.ok) return []
 
   const data = (await response.json()) as {
-    query?: { pages?: SearchPage[]; search?: Array<{ pageid?: number; snippet?: string }> }
+    query?: { pages?: SearchPage[]; search?: Array<{ pageid?: number; snippet?: string; sectiontitle?: string }> }
   }
   const pages = data.query?.pages ?? []
+  const sectionTitles = new Map(
+    (data.query?.search ?? []).map((hit) => [hit.pageid, hit.sectiontitle || null]),
+  )
+  const answers = new Map(
+    (data.query?.search ?? []).map((hit) => [
+      hit.pageid,
+      hit.snippet ? answerFromSnippet(hit.snippet) : null,
+    ]),
+  )
   // Present only when the request also asks for `list=search`.
   const snippets = new Map(
     (data.query?.search ?? []).map((hit) => [hit.pageid, hit.snippet || null]),
@@ -118,6 +142,8 @@ async function fetchPages(
         passage === 'intro'
           ? firstParagraphHtml(page.extract)
           : (snippets.get(page.pageid) ?? null),
+      sectionTitle: passage === 'snippet' ? (sectionTitles.get(page.pageid) ?? null) : null,
+      answerText: passage === 'snippet' ? (answers.get(page.pageid) ?? null) : null,
       thumbnailUrl: page.thumbnail?.source ?? null,
     }))
 }
@@ -197,8 +223,9 @@ export async function searchSemantic(
       srsearch: trimmed,
       srlimit: String(SEARCH_LIMIT),
       srnamespace: '0',
-      srprop: 'snippet',
-      cirrusSemanticSearch: '1',
+      srprop: 'snippet|sectiontitle',
+      // `hl` also marks the passage's answer with `searchmatch` (see answerFromSnippet).
+      cirrusSemanticSearch: 'hl',
     },
     'snippet',
     options,
