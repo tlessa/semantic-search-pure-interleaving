@@ -333,9 +333,10 @@ function stopOnboardingHint(): void {
  * reduced motion, everything shows at once and nothing moves.
  */
 const ONBOARDING_QUESTION = 'How was the Moon formed?'
-const TYPE_START_MS = 400
-const TYPE_CHAR_MS = 55
-/** After the last character, before the skeletons show. */
+const TYPE_START_MS = 300
+/** The question types a word at a time. */
+const TYPE_WORD_MS = 120
+/** After the last word, before the skeletons show. */
 const TYPED_PAUSE_MS = 300
 const LOADING_MS = 1100
 
@@ -357,17 +358,17 @@ function playOnboardingIntro(): void {
     onboardingPhase.value = 'ready'
     return
   }
-  const characters = Array.from(ONBOARDING_QUESTION)
+  const words = ONBOARDING_QUESTION.split(' ')
   const later = (ms: number, step: () => void) => introTimers.push(setTimeout(step, ms))
 
   onboardingTyped.value = ''
   onboardingPhase.value = 'typing'
-  characters.forEach((_, i) => {
-    later(TYPE_START_MS + i * TYPE_CHAR_MS, () => {
-      onboardingTyped.value = characters.slice(0, i + 1).join('')
+  words.forEach((_, i) => {
+    later(TYPE_START_MS + i * TYPE_WORD_MS, () => {
+      onboardingTyped.value = words.slice(0, i + 1).join(' ')
     })
   })
-  const loadingAt = TYPE_START_MS + characters.length * TYPE_CHAR_MS + TYPED_PAUSE_MS
+  const loadingAt = TYPE_START_MS + words.length * TYPE_WORD_MS + TYPED_PAUSE_MS
   later(loadingAt, () => {
     onboardingPhase.value = 'loading'
   })
@@ -1994,7 +1995,8 @@ button.template-app-search__result {
 }
 
 .template-app-search__onboarding-title {
-  margin: 0;
+  /* 40px to the search field: the content's 24px gap plus 16px. */
+  margin: 0 0 var(--spacing-100, 16px);
   font-family: inherit;
   font-size: 32px;
   line-height: 40px;
