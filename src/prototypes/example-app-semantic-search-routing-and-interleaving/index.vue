@@ -328,9 +328,10 @@ function stopOnboardingHint(): void {
 }
 
 /*
- * Intro, each time the onboarding opens: the question types itself into the pill, the
- * cards load as skeletons, the results fade in, then the landing hint plays. With
- * reduced motion, everything shows at once and nothing moves.
+ * Intro, each time the onboarding opens: the pill, the skeleton cards and the copy are
+ * there from the start; the question types itself in while the skeletons shimmer, then
+ * the skeletons fade into the results and the landing hint plays. With reduced motion,
+ * everything shows at once and nothing moves.
  */
 const ONBOARDING_QUESTION = 'How was the Moon formed?'
 const TYPE_START_MS = 300
@@ -338,7 +339,8 @@ const TYPE_START_MS = 300
 const TYPE_WORD_MS = 120
 /** After the last word, before the skeletons show. */
 const TYPED_PAUSE_MS = 300
-const LOADING_MS = 1100
+/** The skeletons keep shimmering this long after the question is typed. */
+const LOADING_MS = 400
 
 type OnboardingPhase = 'typing' | 'loading' | 'ready'
 
@@ -1404,13 +1406,12 @@ function onResultMenuSelect(action: ResultMenuAction): void {
             @click.capture="onOnboardingClickCapture"
             @dragstart.prevent
           >
-            <!-- Skeletons while "searching" (invisible while typing, to hold the space). -->
+            <!-- Skeletons from the start, shimmering while the question types and loads. -->
             <Transition name="template-app-search__onboarding-deck">
               <div
                 v-if="onboardingPhase !== 'ready'"
                 key="skeleton"
-                class="template-app-search__onboarding-deck"
-                :class="{ 'template-app-search__onboarding-deck--hidden': onboardingPhase === 'typing' }"
+                class="template-app-search__onboarding-deck template-app-search__onboarding-deck--skeleton"
                 aria-hidden="true"
               >
                 <div
@@ -2004,6 +2005,8 @@ button.template-app-search__result {
 }
 
 .template-app-search__onboarding-question {
+  /* One 24px line plus 4px padding above and below, typed or not. */
+  min-height: 32px;
   display: flex;
   align-items: center;
   gap: var(--spacing-50, 8px);
@@ -2027,13 +2030,41 @@ button.template-app-search__result {
   width: 100%;
 }
 
-.template-app-search__onboarding-deck--hidden {
-  visibility: hidden;
+/* Onboarding skeletons shimmer: a lighter band sweeps across each bar, in place of the
+   list skeleton's pulse. */
+.template-app-search__onboarding-deck--skeleton .template-app-search__skeleton-bar::before,
+.template-app-search__onboarding-deck--skeleton .template-app-search__skeleton-thumb {
+  background-image: linear-gradient(
+    90deg,
+    var(--background-color-interactive, #eaecf0) 25%,
+    var(--background-color-base, #fff) 50%,
+    var(--background-color-interactive, #eaecf0) 75%
+  );
+  background-size: 200% 100%;
+  animation: template-app-search-shimmer 1.2s linear infinite;
 }
 
+@keyframes template-app-search-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .template-app-search__onboarding-deck--skeleton .template-app-search__skeleton-bar::before,
+  .template-app-search__onboarding-deck--skeleton .template-app-search__skeleton-thumb {
+    animation: none;
+  }
+}
+
+/* Skeletons fade into the cards. */
 .template-app-search__onboarding-deck-enter-active,
 .template-app-search__onboarding-deck-leave-active {
-  transition: opacity 300ms ease-out;
+  transition: opacity 450ms ease-in-out;
 }
 
 .template-app-search__onboarding-deck-enter-from,
