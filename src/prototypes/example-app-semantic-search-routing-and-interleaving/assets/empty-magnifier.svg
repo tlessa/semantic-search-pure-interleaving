@@ -1,0 +1,11 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="50.549" height="52.7371" viewBox="0 0 50.549 52.7371" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Magnifying glass">
+<rect id="Rectangle 4" x="29.6602" y="28.6328" width="14.9774" height="4.54727" transform="rotate(45 29.6602 28.6328)" fill="#A2A9B1"/>
+<rect id="Rectangle 5" x="33.3387" y="30.4874" width="24.3389" height="7.12679" rx="2" transform="rotate(45 33.3387 30.4874)" fill="#72777D"/>
+<rect id="Rectangle 6" x="35.6166" y="32.7653" width="17.8962" height="7.12679" transform="rotate(45 35.6166 32.7653)" fill="#202122"/>
+<rect id="Rectangle 7" x="35.6234" y="34.5961" width="15.2973" height="2.27363" transform="rotate(45 35.6234 34.5961)" fill="#A2A9B1"/>
+<path id="Subtract" d="M17.7676 0C27.5805 0 35.5352 7.95563 35.5352 17.7686C35.5349 27.5813 27.5803 35.5361 17.7676 35.5361C7.95489 35.536 0.000263125 27.5812 0 17.7686C0 7.95568 7.95472 8.65921e-05 17.7676 0ZM17.7676 3.86523C10.0895 3.86535 3.86546 10.0895 3.86523 17.7676C3.86523 25.4458 10.0893 31.6708 17.7676 31.6709C25.4459 31.6709 31.6709 25.4459 31.6709 17.7676C31.6707 10.0894 25.4458 3.86523 17.7676 3.86523Z" fill="#72777D"/>
+<circle id="Ellipse 4" cx="17.7679" cy="17.7678" r="13.0272" fill="#C8CCD1" stroke-width="2" stroke="#202122"/>
+<path id="Ellipse 5" d="M19.7955 9.6424C23.1632 9.6424 25.8933 12.3725 25.8933 15.7402" stroke-width="2" stroke-linecap="round" stroke="white"/>
+</g>
+</svg>

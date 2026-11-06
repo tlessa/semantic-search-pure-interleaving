@@ -1,0 +1,15 @@
+/*
+ * Roboto, as in the Figma designs (the Android app's font), on every device — not the
+ * Codex system font stack, which is SF on Apple devices. Put `semantic-search-roboto`
+ * on each root: the search screen, and the sheets and toast teleported to <body>.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap');
+
+.semantic-search-roboto {
+  font-family: 'Roboto', var(--font-family-system-sans, system-ui, sans-serif);
+}
+
+/* Form controls don't inherit the font by default (Codex tabs fell back to Arial). */
+.semantic-search-roboto :is(button, input, textarea, select) {
+  font-family: inherit;
+}
