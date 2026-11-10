@@ -540,10 +540,15 @@ function onResultMenuSelect(action: ResultMenuAction): void {
                         >
                           {{ result.description }}
                         </span>
-                        <span v-if="result.sectionTitle" class="template-app-search__result-section">
+                        <!-- Where the passage comes from: its section, or "Lead" (lexical cards'
+                             first paragraph, and semantic passages from before the first heading). -->
+                        <span
+                          v-if="result.sectionTitle || result.passageHtml"
+                          class="template-app-search__result-section"
+                        >
                           <span class="template-app-search__icon" :style="{ '--icon': `url(${JSON.stringify(sectionArrowIcon)})` }" />
                           <span class="template-app-search__result-section-title">
-                            {{ result.sectionTitle }}
+                            {{ result.sectionTitle ?? 'Lead' }}
                           </span>
                         </span>
                       </span>
@@ -1054,8 +1059,13 @@ button.template-app-search__result {
   margin-bottom: var(--spacing-25, 4px);
 }
 
+/* Title, description and section title: each at most 2 lines, then an ellipsis. */
 .template-app-search__result-title {
-  display: block;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   font-size: 16px;
   line-height: 24px;
   font-weight: var(--font-weight-semi-bold, 600);
@@ -1067,14 +1077,15 @@ button.template-app-search__result {
 }
 
 .template-app-search__result-description {
-  display: block;
+  display: -webkit-box;
   overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   color: var(--color-subtle, #54595d);
   font-size: 14px;
   line-height: 20px;
   letter-spacing: 0.25px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .template-app-search__result-thumb {
@@ -1119,10 +1130,11 @@ button.template-app-search__result {
   border-top: 0.5px solid var(--border-color-muted, #eaecf0);
 }
 
-/* Figma "New Card (Interleaved) iOS" (10090:6495): under the description, one line. */
+/* Figma "New Card (Interleaved) iOS" (10090:6495): under the description, up to 2 lines;
+   the arrow sits on the first line. */
 .template-app-search__result-section {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--spacing-25, 4px);
   padding-top: var(--spacing-25, 4px);
 }
@@ -1142,9 +1154,11 @@ button.template-app-search__result {
 .template-app-search__result-section-title {
   flex: 1 1 0;
   min-width: 0;
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   font-size: 12px;
   line-height: 16px;
   letter-spacing: 0.4px;
