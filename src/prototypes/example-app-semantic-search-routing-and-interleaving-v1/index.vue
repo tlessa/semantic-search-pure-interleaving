@@ -3,7 +3,7 @@ import { cdxIconSearch } from '@wikimedia/codex-icons'
 
 definePage({
   meta: {
-    title: 'Semantic Search Routing and Interleaving',
+    title: 'Semantic Search Routing and Interleaving V1',
     category: 'example',
     platform: 'app',
     order: 3,

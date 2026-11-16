@@ -1,0 +1,143 @@
+<script setup lang="ts">
+// The article a search result opens, rendered like the Wikipedia apps render it
+// (Page Content Service mobile-html, see AppArticleView), landing on the passage that
+// answered a semantic search (`?answer=`, falling back to `?section=`).
+definePage({
+  meta: {
+    platform: 'app',
+    hidden: true,
+  },
+})
+
+import { computed, onBeforeUnmount, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+import AppChromeWrapper from '@/components/app/AppChromeWrapper.vue'
+import {
+  ANDROID_ARTICLE_BOTTOM_NAV_ITEMS,
+  IOS_ARTICLE_BOTTOM_NAV_ITEMS,
+  type AppBottomNavItem,
+} from '@/components/app/appBottomNavItems'
+import type { AppHeaderItem } from '@/components/app/AppChromeHeader.vue'
+import { useIsIos } from '@/composables/useAppPlatform'
+
+import AppArticleView from './AppArticleView.vue'
+import { landOnPassage } from './landOnPassage.js'
+import { useVisualViewport } from '../useVisualViewport.js'
+import '../roboto.css'
+
+const route = useRoute()
+const router = useRouter()
+const isIos = useIsIos()
+/** The visible area: the screen pins itself to it so the "W" header never scrolls away. */
+const viewport = useVisualViewport()
+
+function queryString(key: string): string | undefined {
+  const value = route.query[key]
+  return typeof value === 'string' && value.trim().length ? value : undefined
+}
+
+const article = computed(() => queryString('article'))
+const lang = computed(() => queryString('lang'))
+
+/** The search screen this article was opened from: this route's parent. */
+const searchPath = computed(() => route.path.replace(/\/article\/?$/, ''))
+
+/** Keep `?debug=1` across navigation inside the prototype. */
+const debugQuery = computed(() => (route.query.debug ? { debug: route.query.debug } : {}))
+
+function goBack(): void {
+  router.back()
+}
+
+function goToSearch(): void {
+  router.push({ path: searchPath.value, query: debugQuery.value })
+}
+
+function onBottomNav(item: AppBottomNavItem): void {
+  if (item === 'search' || item === 'article-search') goToSearch()
+}
+
+/**
+ * Arriving for a passage (`?answer=` / `?section=`), the article stays hidden behind the
+ * loading bar until it's scrolled there, so it appears already at the passage. A
+ * safety timeout reveals it anyway if the article never finishes setting up.
+ */
+const LANDING_TIMEOUT_MS = 10000
+const landing = ref(Boolean(queryString('answer') || queryString('section')))
+const landingTimeout = landing.value
+  ? setTimeout(() => (landing.value = false), LANDING_TIMEOUT_MS)
+  : undefined
+onBeforeUnmount(() => clearTimeout(landingTimeout))
+
+async function onReady(doc: Document): Promise<void> {
+  await landOnPassage(doc.body, { answer: queryString('answer'), section: queryString('section') })
+  landing.value = false
+  clearTimeout(landingTimeout)
+}
+
+/** A link inside the article opens that article here, at the top. */
+function openArticle(title: string): void {
+  landing.value = false
+  router.push({ path: route.path, query: { article: title, lang: lang.value, ...debugQuery.value } })
+}
+
+const backIcon = computed(() => (isIos.value ? 'previous' : 'arrow-previous'))
+
+const headerLeft = computed((): AppHeaderItem[] => [
+  { type: 'button', icon: backIcon.value, label: 'Back', onClick: goBack },
+  { type: 'button', icon: 'search', label: 'Search', onClick: goToSearch },
+])
+
+const headerMiddle: AppHeaderItem[] = [{ type: 'link', icon: 'logo-wikipedia', label: 'Wikipedia' }]
+
+const headerRight: AppHeaderItem[] = [
+  { type: 'button', icon: 'tabs', label: 'Tabs' },
+  { type: 'button', icon: 'bell-outline', label: 'Notifications' },
+  { type: 'button', icon: 'vertical-ellipsis', label: 'Menu' },
+]
+
+const bottomNavItems = computed(() =>
+  isIos.value ? IOS_ARTICLE_BOTTOM_NAV_ITEMS : ANDROID_ARTICLE_BOTTOM_NAV_ITEMS,
+)
+</script>
+
+<template>
+  <AppChromeWrapper
+    class="app-article-screen semantic-search-roboto"
+    :style="{ '--viewport-top': `${viewport.top}px`, '--viewport-height': `${viewport.height}px` }"
+    :left="headerLeft"
+    :middle="headerMiddle"
+    :right="headerRight"
+    :bottom-nav-items="bottomNavItems"
+    @navigate="onBottomNav"
+  >
+    <AppArticleView
+      v-if="article"
+      :key="`${lang}:${article}`"
+      :title="article"
+      :lang="lang"
+      :concealed="landing"
+      @ready="onReady"
+      @open-article="openArticle"
+    />
+  </AppChromeWrapper>
+</template>
+
+<style scoped>
+/*
+ * Pinned to the visible area (useVisualViewport), so only the article scrolls and the
+ * header ("W") and bottom menu stay put. Mobile Safari's 100vh is taller than what's
+ * visible, which let the page itself scroll — landing on a passage then pushed the
+ * header off the top.
+ */
+.app-article-screen :deep(.app-chrome-wrapper) {
+  position: fixed;
+  top: var(--viewport-top, 0px);
+  left: 50%;
+  width: min(100vw, 412px);
+  height: var(--viewport-height, 100dvh);
+  max-height: none;
+  transform: translateX(-50%);
+}
+</style>
