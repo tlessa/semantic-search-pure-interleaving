@@ -250,15 +250,11 @@ function setResults(
 }
 
 /**
- * The list on screen mixes semantic and lexical cards (the interleaved route). Matches
- * aren't bolded there: only semantic passages have them highlighted as an answer, so
- * bold would reveal which retriever each card came from.
+ * Interleaved route: matches aren't bolded. Only semantic passages have them highlighted
+ * as an answer, so bold would reveal which retriever each card came from. Keyed on the
+ * route in use (as in the test panel), so it holds when the list ends up one-sided too.
  */
-const listIsInterleaved = computed(
-  () =>
-    results.value.some((r) => r.source === 'semantic') &&
-    results.value.some((r) => r.source === 'lexical'),
-)
+const listIsInterleaved = computed(() => currentRoute.value === 'interleaved')
 
 function normalizeTitle(value: string): string {
   return value.replace(/_/g, ' ').replace(/\s+/g, ' ').trim().toLocaleLowerCase()
@@ -1563,7 +1559,7 @@ button.template-app-search__result {
   font-weight: var(--font-weight-bold, 700);
 }
 
-/* Lexical and semantic routes only: in an interleaved list, bold would reveal the
+/* Lexical and semantic routes only: on the interleaved route, bold would reveal the
    retriever (see listIsInterleaved). */
 .template-app-search__results--interleaved .template-app-search__result-passage :deep(.searchmatch) {
   font-weight: inherit;
